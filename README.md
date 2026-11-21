@@ -151,7 +151,25 @@ docker exec iic-osic-tools_shell_uid_1000 bash -lc 'cd /foss/designs/postlayout_
 | `model/dataset.py` | samples → bipartite graphs + targets |
 | `model/baselines.py`, `model/gnn.py` | baselines; the GNN |
 | `model/run_all.py`, `model/ablations.py`, `model/plot_decomposition.py` | experiments, plots, tables → `results/` |
+| `model/predict_p1.py` | lay out and predict the LLM agent's final designs |
 | `NOTES.md` | plain-language explanations + interview Q&A |
+
+## Applied to the LLM agent's designs
+
+The 8 final designs from [LLM_Analog_Sizing](https://github.com/Pavan072006/LLM_Analog_Sizing) were laid out with the same generator
+(all LVS match) and the GNN, trained as above, predicted their post-layout shift
+(`python3 model/predict_p1.py gen` with the glenv Python, then `python3 model/predict_p1.py predict`).
+Table: [results/p1_designs.md](results/p1_designs.md).
+
+| designs | dGBW error | dPM error |
+|---|---|---|
+| 6 inside or near the training range (input pair W ≤ 128 µm; dataset ≤ 120 µm) | 0.29 %-pts | 0.13° |
+| 2 outside it (S1: W = 324 µm, S5: 205 µm) | 2.6 %-pts | 1.3° |
+
+Inside the training range the GNN is as accurate as on its own test set. The optimiser pushed two designs
+to much wider input pairs than the dataset covers. There, the GNN under-predicts the output capacitance
+by 15–30 % and over-predicts the shift. A sizing loop that uses it needs the training range to cover
+the optimiser's search space, or a check that flags designs outside it.
 
 ## Limitations (honest list)
 
