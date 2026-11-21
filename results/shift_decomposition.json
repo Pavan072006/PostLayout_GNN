@@ -1,0 +1,11 @@
+{
+ "n": 702,
+ "dGBW_post_mean": -3.1846100588549087,
+ "dGBW_post_std": 2.5993944767385013,
+ "MAE_caps_only": 0.8757617373597548,
+ "MAE_caps_geo": 0.028717183125024297,
+ "PM_MAE_caps_only": 0.253018161670174,
+ "PM_MAE_caps_geo": 0.010384162562564789,
+ "dA0_post_vs_naive_pre_mean_abs": 0.31795130911680897,
+ "dA0_post_vs_finger_pre_mean_abs": 0.002445386039885972
+}
