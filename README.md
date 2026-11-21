@@ -152,7 +152,6 @@ docker exec iic-osic-tools_shell_uid_1000 bash -lc 'cd /foss/designs/postlayout_
 | `model/baselines.py`, `model/gnn.py` | baselines; the GNN |
 | `model/run_all.py`, `model/ablations.py`, `model/plot_decomposition.py` | experiments, plots, tables → `results/` |
 | `model/predict_p1.py` | lay out and predict the LLM agent's final designs |
-| `NOTES.md` | plain-language explanations + interview Q&A |
 
 ## Applied to the LLM agent's designs
 
