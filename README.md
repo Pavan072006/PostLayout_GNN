@@ -14,8 +14,12 @@ open-PDK version of the same idea.
 
 Analog job descriptions keep asking for "post-layout extracted simulations" because the
 schematic-to-layout gap is where analog designs miss specs. Pre-layout sims ignore wiring caps
-and use idealised transistor junctions. The real numbers only show up after layout + PEX, days
-later. A schematic-level predictor shortens that loop to milliseconds.
+and use idealised transistor junctions. The real numbers only show up after layout + PEX.
+With hand-drawn layout (the norm in industry) that is days per iteration. Even in this fully
+automated gLayout flow it is ~1 min per design, which is too slow to run inside a sizing
+optimiser that tries hundreds of candidates. The GNN predicts the same parasitics in
+milliseconds, so the optimiser can size for **post-layout** performance directly (see
+"Post-layout-aware sizing" below).
 
 ## Pipeline
 
@@ -105,7 +109,31 @@ than the *true* wiring caps alone, because they also model the junction geometry
 
 ![shift](results/shift_prediction.png)
 
-### 4. Ablations
+### 4. Post-layout-aware sizing (project 1 optimiser + this GNN)
+
+The GNN is fast enough (milliseconds) to sit **inside** a sizing optimiser. Using project 1's
+idea (gm/Id design space, Nelder-Mead, ngspice in the loop, minimise power under specs), each
+of three small-load specs (CL = 0.15–0.5 pF) was sized three ways, 2 seeds each. Every final
+design was then laid out with gLayout, LVS-checked (18/18 match), extracted with Magic and
+re-simulated:
+
+| sizing method | meets spec after real layout | mean power (% of budget) | GBW the optimiser saw vs real post-layout |
+|---|---|---|---|
+| schematic only | **1/6** | 16.1 % | 1.72 % off |
+| schematic + fixed 5 % GBW / 2° PM guard band | 6/6 | 16.9 % | 2.16 % off (on purpose) |
+| **schematic + GNN-predicted parasitics** | **6/6** | **16.2 %** | **0.08 % off** |
+
+Schematic-only designs land exactly on the GBW limit and then fall 0.5–3 % below it after
+layout. The GNN-aware designs land exactly on the limit *after* layout, at the same power as
+schematic-only. Honest note: the 5 % guard band also passed here (at ~4 % more power) because
+these shifts were ≤ 3 %. A fixed guard band is a guess: in the dataset the shift ranges from
+0 to 9 %, so any fixed margin is either too small for some designs or wastes power on others.
+The GNN gives each design its own correction. The GNN costs almost nothing in optimiser time
+(~25 s per run either way). Details: [results/opt_report.md](results/opt_report.md).
+
+![opt](results/opt_comparison.png)
+
+### 5. Ablations
 
 | experiment | result |
 |---|---|
@@ -132,6 +160,10 @@ docker exec -d iic-osic-tools_shell_uid_1000 bash -lc "bash /foss/designs/postla
 
 ```bash
 docker exec iic-osic-tools_shell_uid_1000 bash -lc 'cd /foss/designs/postlayout_gnn && python3 gen/resim_dataset.py --workers 3 && python3 model/plot_decomposition.py && python3 model/run_all.py && python3 model/ablations.py'
+```
+
+```bash
+docker exec iic-osic-tools_shell_uid_1000 bash -lc 'cd /foss/designs/postlayout_gnn && python3 opt/predictor.py --train && python3 opt/optimise.py && /foss/designs/glenv/bin/python -E opt/verify.py && python3 opt/report.py'
 ```
 
 * Data generation is resumable (finished samples are skipped). Use `N_OTA`, `N_TS2`, `W_OTA`, `W_TS2`
